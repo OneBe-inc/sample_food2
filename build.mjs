@@ -3,10 +3,28 @@ import path from 'node:path';
 const root=import.meta.dirname;
 const out=path.join(root,'public');
 await fs.mkdir(out,{recursive:true});
+const socialConfig={"base":"https://onebe-inc.github.io/sample_food2/","image":"assets/onebe-web-service-ogp.png","width":1672,"height":941,"type":"image/png","description":"鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。","alt":"One Be 定額Webサービス。モニター特別価格、初期費用5,000円（税込）＋月額2か月分無料、月額10,000円〜（税込）。詳細条件は画像内に記載。"};
+const escapeMeta=value=>String(value).replace(/[&"<>]/g,char=>({'&':'&amp;','"':'&quot;','<':'&lt;','>':'&gt;'}[char]));
+const socialMeta=(title,page)=>{
+ const imageUrl=socialConfig.base+socialConfig.image;
+ const pageUrl=socialConfig.base+(page==='home'?'':page+'/');
+ const entries=[
+  ['property','og:type','website'],['property','og:locale','ja_JP'],
+  ['property','og:site_name','サンプル'],['property','og:title',title+'｜サンプル'],
+  ['property','og:description',socialConfig.description],['property','og:url',pageUrl],
+  ['property','og:image',imageUrl],['property','og:image:secure_url',imageUrl],
+  ['property','og:image:type',socialConfig.type],['property','og:image:width',socialConfig.width],
+  ['property','og:image:height',socialConfig.height],['property','og:image:alt',socialConfig.alt],
+  ['name','twitter:card','summary_large_image'],['name','twitter:title',title+'｜サンプル'],
+  ['name','twitter:description',socialConfig.description],['name','twitter:image',imageUrl],
+  ['name','twitter:image:alt',socialConfig.alt]
+ ];
+ return entries.map(([attribute,key,value])=>'<meta '+attribute+'="'+key+'" content="'+escapeMeta(value)+'">').join('\n');
+};
 const navItems=[['about','サンプルについて'],['menu','お品書き'],['ingredients','素材のこと'],['space','店内のご案内'],['news','お知らせ'],['access','店舗情報']];
 const footer=(base)=>`<footer class="footer"><a class="wordmark" href="${base}"><small>鉄板と、旬と。</small>サンプル<span>TEPPAN DINING SAMPLE</span></a><div class="footer-links"><a href="${base}recruit/">採用情報</a><a href="${base}company/">会社概要</a></div><p>このサイトは架空の店舗のサンプルです。<br>写真はAIで生成したイメージです。</p><small>© 2026 SAMPLE</small><a class="to-top" href="#top" aria-label="ページの先頭へ">↑</a></footer>`;
 const shellBase=(title,body,{base='./',page='home'}={})=>`<!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}｜サンプル</title><meta name="description" content="鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#132a40"><link rel="icon" href="${base}assets/favicon.svg"><link rel="preload" as="image" href="${base}assets/hero-steak.webp"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/site.js" defer></script></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}｜サンプル</title><meta name="description" content="鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#132a40"><link rel="icon" href="${base}assets/favicon.svg"><link rel="preload" as="image" href="${base}assets/hero-steak.webp"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/site.js" defer></script>${socialMeta(title,page)}</head>
 <body id="top" data-page="${page}"><a class="skip" href="#main">本文へ進む</a>
 <aside class="scene" aria-label="鉄板料理のイメージ"><img class="scene-image is-current" data-scene="steak" src="${base}assets/hero-steak.webp" alt="香ばしく焼いたステーキと季節野菜"><img class="scene-image" data-scene="seasonal" src="${base}assets/seasonal.webp" alt="帆立と旬野菜の鉄板料理"><img class="scene-image" data-scene="interior" src="${base}assets/interior.webp" alt="木の温もりを感じる鉄板カウンター"><div class="scene-top"><a href="${base}" class="scene-brand">サンプル<span>TEPPAN DINING</span></a><span class="scene-edition">SAVOR THE MOMENT.</span></div><div class="scene-copy"><span class="eyebrow">GOOD FOOD, GOOD COMPANY.</span><p>鉄板を囲む、<br>しあわせな時間。</p><div class="scene-bottom"><span>旬を焼く。会話がはずむ。</span><span class="scroll-hint">SCROLL <i></i></span></div></div><div class="scene-count"><b id="scene-number">01</b> / 03</div></aside>
 <div class="page-column"><header class="header"><a class="header-name" href="${base}">サンプル</a><div class="header-actions"><button class="reserve" data-dialog="reserve">ご予約<span>↗</span></button><button class="menu-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><small>MENU</small></button></div></header>
