@@ -5,8 +5,8 @@ const out=path.join(root,'public');
 await fs.mkdir(out,{recursive:true});
 const navItems=[['about','サンプルについて'],['menu','お品書き'],['ingredients','素材のこと'],['space','店内のご案内'],['news','お知らせ'],['access','店舗情報']];
 const footer=(base)=>`<footer class="footer"><a class="wordmark" href="${base}"><small>鉄板と、旬と。</small>サンプル<span>TEPPAN DINING SAMPLE</span></a><div class="footer-links"><a href="${base}recruit/">採用情報</a><a href="${base}company/">会社概要</a></div><p>このサイトは架空の店舗のサンプルです。<br>写真はAIで生成したイメージです。</p><small>© 2026 SAMPLE</small><a class="to-top" href="#top" aria-label="ページの先頭へ">↑</a></footer>`;
-const shell=(title,body,{base='./',page='home'}={})=>`<!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}｜サンプル</title><meta name="description" content="鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#392a22"><link rel="icon" href="${base}assets/favicon.svg"><link rel="preload" as="image" href="${base}assets/hero-steak.webp"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/site.js" defer></script></head>
+const shellBase=(title,body,{base='./',page='home'}={})=>`<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}｜サンプル</title><meta name="description" content="鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#132a40"><link rel="icon" href="${base}assets/favicon.svg"><link rel="preload" as="image" href="${base}assets/hero-steak.webp"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/site.js" defer></script></head>
 <body id="top" data-page="${page}"><a class="skip" href="#main">本文へ進む</a>
 <aside class="scene" aria-label="鉄板料理のイメージ"><img class="scene-image is-current" data-scene="steak" src="${base}assets/hero-steak.webp" alt="香ばしく焼いたステーキと季節野菜"><img class="scene-image" data-scene="seasonal" src="${base}assets/seasonal.webp" alt="帆立と旬野菜の鉄板料理"><img class="scene-image" data-scene="interior" src="${base}assets/interior.webp" alt="木の温もりを感じる鉄板カウンター"><div class="scene-top"><a href="${base}" class="scene-brand">サンプル<span>TEPPAN DINING</span></a><span class="scene-edition">SAVOR THE MOMENT.</span></div><div class="scene-copy"><span class="eyebrow">GOOD FOOD, GOOD COMPANY.</span><p>鉄板を囲む、<br>しあわせな時間。</p><div class="scene-bottom"><span>旬を焼く。会話がはずむ。</span><span class="scroll-hint">SCROLL <i></i></span></div></div><div class="scene-count"><b id="scene-number">01</b> / 03</div></aside>
 <div class="page-column"><header class="header"><a class="header-name" href="${base}">サンプル</a><div class="header-actions"><button class="reserve" data-dialog="reserve">ご予約<span>↗</span></button><button class="menu-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><small>MENU</small></button></div></header>
@@ -14,6 +14,16 @@ const shell=(title,body,{base='./',page='home'}={})=>`<!doctype html>
 <main id="main">${body}</main>${footer(base)}</div>
 <dialog class="dialog" aria-labelledby="dialog-title"><form method="dialog"><button class="dialog-close" aria-label="閉じる">×</button></form><span class="eyebrow">SAMPLE INFORMATION</span><h2 id="dialog-title">ご予約について</h2><div id="dialog-body"></div><form method="dialog"><button class="dark-button">閉じる</button></form></dialog>
 </body></html>`;
+// Wrap visible numerals without touching URLs, attributes, or document metadata.
+const shell=(...args)=>{
+ let inBody=false;
+ return shellBase(...args).split(/(<[^>]+>)/g).map(part=>{
+  if(part.startsWith('<body'))inBody=true;
+  if(part.startsWith('</body'))inBody=false;
+  if(!inBody||part.startsWith('<'))return part;
+  return part.replace(/\d+(?:[.,:/-]\d+)*/g,value=>' <span class="numeric">'+value+'</span>').replace(/ <span/g,'<span');
+ }).join('');
+};
 const heading=(n,en,ja)=>`<div class="section-heading"><span class="eyebrow">${n} / ${en}</span><h2>${ja}</h2></div>`;
 const dishes=[{image:'hero-steak',name:'赤身ステーキと焼き野菜',price:'2,800',desc:'表面は香ばしく、中はしっとり。塩と季節の薬味で、肉の味わいをシンプルに。'},{image:'seasonal',name:'帆立と旬野菜の鉄板焼き',price:'1,600',desc:'甘みのある帆立に、きのこと緑の野菜を添えて。仕上げのバターがふわりと香ります。'}];
 const dishCards=(base='./')=>dishes.map((d,i)=>`<article class="dish"><div class="dish-image"><img src="${base}assets/${d.image}.webp" alt="${d.name}" loading="lazy" width="1536" height="1024"><span>0${i+1}</span></div><div class="dish-title"><h3>${d.name}</h3><p>¥${d.price}<small>税込</small></p></div><p class="body-copy">${d.desc}</p></article>`).join('');
@@ -31,6 +41,6 @@ const pages={
  'recruit':`${heading('JOIN US','RECRUIT','おいしい時間を、<br>一緒につくる。')}<img class="subpage-photo" src="../assets/interior.webp" alt="鉄板カウンターのイメージ"><p class="body-copy section-lead">料理が好き。人と話すのが好き。<br>その気持ちを大切に、ひとつずつ。<br>気持ちのいいお店を一緒につくりませんか。</p><h2 class="small-heading">募集要項</h2><dl class="info-list"><div><dt>職種</dt><dd>キッチン・ホールスタッフ</dd></div><div><dt>業務内容</dt><dd>調理補助、接客、店舗運営</dd></div><div><dt>勤務条件</dt><dd>実際の募集時にご案内します</dd></div><div><dt>応募受付</dt><dd>現在は募集しておりません</dd></div></dl><button class="dark-button" data-dialog="recruit">採用について <span>↗</span></button><p class="fine">サンプルの採用ページです。応募情報の送信は行いません。</p>`,
  'menu':`${heading('À LA CARTE / COURSE','MENU','お品書き')}<p class="body-copy section-lead">焼きたての一皿を、気軽に。<br>料理とコースをご紹介します。</p>${menuContent('../')}`
 };
-for(const [name,content] of Object.entries(pages)){await fs.mkdir(path.join(out,name),{recursive:true});await fs.writeFile(path.join(out,name,'index.html'),shell(name==='company'?'会社概要':name==='recruit'?'採用情報':'お品書き',`<section class="section subpage" data-background="${name==='menu'?'seasonal':'interior'}"><a class="back-link" href="../">← トップへ</a>${content}</section>`,{base:'../',page:name}));}
+for(const [name,content] of Object.entries(pages)){await fs.mkdir(path.join(out,name),{recursive:true});await fs.writeFile(path.join(out,name,'index.html'),shell(name==='company'?'会社概要':name==='recruit'?'採用情報':'お品書き',`<section class="section subpage" data-background="${name==='menu'?'seasonal':'interior'}"><a class="back-link" href="../">← トップへ</a>${content.replace(/<h2>([\s\S]*?)<\/h2>/, '<h1>$1</h1>')}</section>`,{base:'../',page:name}));}
 await fs.writeFile(path.join(out,'.nojekyll'),'');
 console.log('Built 4 original static pages into public/.');
