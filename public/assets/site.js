@@ -1,20 +1,105 @@
-(() => {
- 'use strict';
- const toggle=document.querySelector('.menu-toggle');
- const nav=document.getElementById('site-nav');
- let savedScroll=0;
- function setMenu(open){toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'メニューを閉じる':'メニューを開く');nav.classList.toggle('is-open',open);nav.inert=!open;if(open){savedScroll=window.scrollY;document.body.style.position='fixed';document.body.style.width='100%';document.body.style.top=`-${savedScroll}px`;}else{document.body.style.position='';document.body.style.width='';document.body.style.top='';window.scrollTo({top:savedScroll,behavior:'instant'});}}
- toggle.addEventListener('click',()=>setMenu(toggle.getAttribute('aria-expanded')!=='true'));
- nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenu(false)));
- document.addEventListener('keydown',e=>{if(toggle.getAttribute('aria-expanded')!=='true')return;if(e.key==='Escape'){setMenu(false);toggle.focus();}if(e.key==='Tab'){const nodes=[toggle,...nav.querySelectorAll('a,button')];if(e.shiftKey&&document.activeElement===nodes[0]){e.preventDefault();nodes.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===nodes.at(-1)){e.preventDefault();nodes[0].focus();}}});
- const dialog=document.querySelector('.dialog');
- const messages={reserve:['ご予約について','こちらは架空の鉄板焼き店「サンプル」のデモサイトです。現在、ご予約・お問い合わせは受け付けておりません。'],recruit:['採用について','こちらはサンプルの採用ページです。現在、スタッフの募集・応募受付は行っておりません。'], 'news-open':['ウェブサイトを公開しました。','サンプルのウェブサイトをご覧いただき、ありがとうございます。鉄板料理の楽しさと、心地よいお店の時間をイメージしたデモサイトです。'], 'news-menu':['季節を楽しむ、おまかせコース。','旬の前菜、魚介、赤身ステーキからデザートまで。おまかせコースは、お一人様5,500円のサンプルメニューとしてご紹介しています。お品書きの「コース」タブをご覧ください。']};
- document.querySelectorAll('[data-dialog]').forEach(button=>button.addEventListener('click',()=>{const [title,text]=messages[button.dataset.dialog];document.getElementById('dialog-title').textContent=title;const p=document.createElement('p');for(const part of text.split(/(\d+(?:[.,:/-]\d+)*)/g)){if(/^\d/.test(part)){const span=document.createElement('span');span.className='numeric';span.textContent=part;p.append(span);}else p.append(document.createTextNode(part));}document.getElementById('dialog-body').replaceChildren(p);dialog.showModal();}));
- dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();});
- document.querySelectorAll('[role=tablist]').forEach(list=>{const tabs=[...list.querySelectorAll('[role=tab]')];function activate(tab,focus=false){tabs.forEach(t=>{const current=t===tab;t.setAttribute('aria-selected',String(current));t.tabIndex=current?0:-1;document.getElementById(t.getAttribute('aria-controls')).hidden=!current;});if(focus)tab.focus();}tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>activate(tab));tab.addEventListener('keydown',e=>{let next;if(e.key==='ArrowRight')next=(i+1)%tabs.length;else if(e.key==='ArrowLeft')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;if(next!==undefined){e.preventDefault();activate(tabs[next],true);}});});});
- const scenes=[...document.querySelectorAll('.scene-image')];
- const sections=[...document.querySelectorAll('[data-background]')];
- let pending=false;
- function updateScene(){pending=false;let current=sections[0]?.dataset.background||'steak';for(const section of sections)if(section.getBoundingClientRect().top<=innerHeight*.45)current=section.dataset.background;scenes.forEach((scene,i)=>{const active=scene.dataset.scene===current;scene.classList.toggle('is-current',active);if(active)document.getElementById('scene-number').textContent=String(i+1).padStart(2,'0');});}
- window.addEventListener('scroll',()=>{if(!pending){pending=true;requestAnimationFrame(updateScene);}},{passive:true});updateScene();
-})();
+const toggle = document.querySelector(".menu-toggle");
+const menu = document.querySelector("#mobile-nav");
+const info = document.querySelector(".info-dialog");
+let dialogTrigger;
+// Keep Tab inside the modal, including browsers that otherwise focus browser chrome.
+for (const modal of [menu, info])
+  modal.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const items = [
+      ...modal.querySelectorAll(
+        'a[href],button,input,select,textarea,[tabindex="0"]',
+      ),
+    ].filter((el) => !el.disabled && el.getClientRects().length);
+    const first = items[0],
+      last = items.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+function closeMenu() {
+  if (menu.open) menu.close();
+}
+toggle.addEventListener("click", () => {
+  menu.showModal();
+  toggle.setAttribute("aria-expanded", "true");
+});
+menu.querySelector(".nav-close").addEventListener("click", closeMenu);
+menu.addEventListener("close", () => {
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.focus({ preventScroll: true });
+});
+menu.addEventListener("click", (event) => {
+  const link = event.target.closest("a");
+  if (link) {
+    closeMenu();
+    const url = new URL(link.href);
+    if (url.pathname === location.pathname && url.hash) {
+      const target = document.querySelector(url.hash);
+      if (target) {
+        target.setAttribute("tabindex", "-1");
+        setTimeout(() => target.focus({ preventScroll: true }), 0);
+      }
+    }
+  }
+  if (event.target === menu) {
+    const r = menu.getBoundingClientRect();
+    if (event.clientX < r.left || event.clientX > r.right) closeMenu();
+  }
+});
+matchMedia("(min-width: 901px)").addEventListener("change", (event) => {
+  if (event.matches) closeMenu();
+});
+const messages = {
+  contact: [
+    "ご予約・お問い合わせ",
+    "<p>腕火屋のサイトをご覧いただき、ありがとうございます。</p><p>こちらは架空店舗のデモサイトです。実際のご予約・お問い合わせは受け付けておりません。</p><p>個人情報の入力や外部への送信は行いません。</p>",
+  ],
+  access: [
+    "店舗情報",
+    '<dl class="info-list"><div><dt>店名</dt><dd>腕火屋（うでびや）</dd></div><div><dt>開業予定</dt><dd>2026年10月（仮設定）</dd></div><div><dt>駐車場</dt><dd>完備（仮設定）</dd></div><div><dt>所在地・電話</dt><dd>未設定</dd></div><div><dt>営業時間</dt><dd>未設定</dd></div></dl><p class="fine">架空店舗のため、地図や実際の連絡先はありません。</p>',
+  ],
+  opening: [
+    "2026年10月、腕火屋。",
+    '<p>本格家系を、腕と火で食わせる。</p><p>濃厚豚骨醤油スープ、力強い中太麺、妥協しない具材。一杯に想いを込める「腕火屋」の開業をイメージしたご案内です。</p><p class="fine">開業日は仮設定です。実際の店舗のオープン告知ではありません。</p>',
+  ],
+  recruit: [
+    "採用について",
+    "<p>こちらは架空店舗の採用ページです。現在、実際の求人募集は行っておりません。</p><p>応募情報や個人情報の入力・送信は行いません。</p>",
+  ],
+};
+document.querySelectorAll("[data-dialog]").forEach((button) =>
+  button.addEventListener("click", () => {
+    const message = messages[button.dataset.dialog];
+    if (!message) return;
+    dialogTrigger = button;
+    document.querySelector("#dialog-title").textContent = message[0];
+    document.querySelector("#dialog-body").innerHTML = message[1];
+    info.showModal();
+  }),
+);
+info.addEventListener("close", () =>
+  dialogTrigger?.focus({ preventScroll: true }),
+);
+info.addEventListener("click", (event) => {
+  if (event.target !== info) return;
+  const r = info.getBoundingClientRect();
+  if (
+    event.clientX < r.left ||
+    event.clientX > r.right ||
+    event.clientY < r.top ||
+    event.clientY > r.bottom
+  )
+    info.close();
+});
+const preferences = document.querySelector("#preference-form");
+preferences?.addEventListener("change", () => {
+  const values = new FormData(preferences);
+  document.querySelector("#preference-summary").textContent =
+    `麺：${values.get("noodle")} ／ 味：${values.get("flavor")} ／ 油：${values.get("oil")}`;
+});
+preferences?.addEventListener("submit", (event) => event.preventDefault());

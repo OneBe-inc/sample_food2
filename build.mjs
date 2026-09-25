@@ -1,64 +1,92 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-const root=import.meta.dirname;
-const out=path.join(root,'public');
-await fs.mkdir(out,{recursive:true});
-const socialConfig={"base":"https://onebe-inc.github.io/sample_food2/","image":"assets/onebe-web-service-ogp.png","width":1672,"height":941,"type":"image/png","description":"鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。","alt":"One Be 定額Webサービス。モニター特別価格、初期費用5,000円（税込）＋月額2か月分無料、月額10,000円〜（税込）。詳細条件は画像内に記載。"};
-const escapeMeta=value=>String(value).replace(/[&"<>]/g,char=>({'&':'&amp;','"':'&quot;','<':'&lt;','>':'&gt;'}[char]));
-const socialMeta=(title,page)=>{
- const imageUrl=socialConfig.base+socialConfig.image;
- const pageUrl=socialConfig.base+(page==='home'?'':page+'/');
- const entries=[
-  ['property','og:type','website'],['property','og:locale','ja_JP'],
-  ['property','og:site_name','サンプル'],['property','og:title',title+'｜サンプル'],
-  ['property','og:description',socialConfig.description],['property','og:url',pageUrl],
-  ['property','og:image',imageUrl],['property','og:image:secure_url',imageUrl],
-  ['property','og:image:type',socialConfig.type],['property','og:image:width',socialConfig.width],
-  ['property','og:image:height',socialConfig.height],['property','og:image:alt',socialConfig.alt],
-  ['name','twitter:card','summary_large_image'],['name','twitter:title',title+'｜サンプル'],
-  ['name','twitter:description',socialConfig.description],['name','twitter:image',imageUrl],
-  ['name','twitter:image:alt',socialConfig.alt]
- ];
- return entries.map(([attribute,key,value])=>'<meta '+attribute+'="'+key+'" content="'+escapeMeta(value)+'">').join('\n');
+import fs from "node:fs/promises";
+import path from "node:path";
+const out = path.join(import.meta.dirname, "public");
+const site = "https://onebe-inc.github.io/sample_food2/";
+const description =
+  "本格家系を、腕と火で食わせる。横浜家系らーめん「腕火屋」のデモサイト。濃厚豚骨醤油、力強い中太麺、妥協しない具材。";
+const nav = [
+  ["#about", "こだわり"],
+  ["menu/", "メニュー"],
+  ["#access", "店舗情報"],
+  ["#news", "お知らせ"],
+  ["recruit/", "採用情報"],
+];
+const dishes = [
+  ["家系らーめん", "900"],
+  ["味玉らーめん", "1,020"],
+  ["チャーシュー麺", "1,200"],
+  ["特製 腕火らーめん", "1,180"],
+];
+const extras = [
+  ["ライス", "150"],
+  ["大ライス", "200"],
+  ["海苔増し", "150"],
+  ["味玉", "120"],
+];
+const prices = (items) =>
+  `<dl class="price-list">${items.map(([n, p]) => `<div><dt>${n}</dt><dd>${p}<small>円</small></dd></div>`).join("")}</dl>`;
+const logo = (base, cls = "") =>
+  `<img class="${cls}" src="${base}assets/logo.png" alt="腕火屋 UDEBIYA" width="610" height="208"><span class="brand-seal" aria-hidden="true">横浜<br>家系</span>`;
+const links = (base) =>
+  nav.map(([url, label]) => `<a href="${base}${url}">${label}</a>`).join("");
+const contact = `<button class="button button-red" data-dialog="contact">ご予約・お問い合わせ <span aria-hidden="true">→</span></button>`;
+const photo = (name, alt, base = "./", cls = "section-photo") =>
+  `<img class="${cls}" src="${base}assets/${name}.webp" srcset="${base}assets/${name}-800.webp 800w, ${base}assets/${name}.webp ${name === "bowl" ? 900 : 1672}w" sizes="(max-width: 700px) 100vw, 100vw" alt="${alt}" width="${name === "bowl" ? 900 : 1672}" height="${name === "bowl" ? 900 : 941}" loading="lazy" decoding="async">`;
+const shell = (title, body, page = "home") => {
+  const base = page === "home" ? "./" : "../";
+  return `<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}｜横浜家系らーめん 腕火屋</title><meta name="description" content="${description}"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#090908"><link rel="icon" href="${base}assets/favicon.svg"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/site.js" defer></script>
+<meta property="og:type" content="website"><meta property="og:locale" content="ja_JP"><meta property="og:site_name" content="腕火屋"><meta property="og:title" content="${title}｜腕火屋"><meta property="og:description" content="${description}"><meta property="og:url" content="${site}${page === "home" ? "" : page + "/"}"><meta property="og:image" content="${site}assets/ogp.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="濃厚豚骨醤油の家系らーめんのイメージ"><meta name="twitter:card" content="summary_large_image"></head>
+<body id="top" data-page="${page}"><a class="skip" href="#main">本文へ進む</a><header class="header"><a class="brand" href="${base}" aria-label="腕火屋 トップ">${logo(base)}</a><nav class="desktop-nav" aria-label="メインナビゲーション">${links(base)}</nav><div class="header-actions">${contact}<button class="menu-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button></div></header>
+<dialog class="mobile-nav" id="mobile-nav" aria-labelledby="nav-title"><div class="nav-top"><p id="nav-title">腕火屋 <small>UDEBIYA</small></p><button class="nav-close" aria-label="メニューを閉じる">×</button></div><nav aria-label="モバイルナビゲーション">${links(base)}</nav><p class="nav-bottom">一杯に、魂を込めて。</p></dialog>
+<main id="main">${body}</main><footer class="footer"><div class="footer-main"><a class="brand" href="${base}" aria-label="腕火屋 トップ">${logo(base)}</a><nav aria-label="フッターナビゲーション">${links(base)}</nav>${contact}</div><div class="footer-note"><p>このサイトは架空の店舗のデモサイトです。店舗・価格・開業日は仮設定で、写真はAI生成のイメージです。</p><a href="${base}company/">サイトについて</a><small>© 2026 UDEBIYA</small><a href="#top" aria-label="ページの先頭へ">↑</a></div></footer>
+<dialog class="info-dialog" aria-labelledby="dialog-title"><form method="dialog"><button class="dialog-close" aria-label="閉じる">×</button></form><p class="eyebrow">UDEBIYA / DEMO INFORMATION</p><h2 id="dialog-title"></h2><div id="dialog-body"></div><form method="dialog"><button class="button button-red">閉じる <span aria-hidden="true">→</span></button></form></dialog></body></html>`;
 };
-const navItems=[['about','サンプルについて'],['menu','お品書き'],['ingredients','素材のこと'],['space','店内のご案内'],['news','お知らせ'],['access','店舗情報']];
-const footer=(base)=>`<footer class="footer"><a class="wordmark" href="${base}"><small>鉄板と、旬と。</small>サンプル<span>TEPPAN DINING SAMPLE</span></a><div class="footer-links"><a href="${base}recruit/">採用情報</a><a href="${base}company/">会社概要</a></div><p>このサイトは架空の店舗のサンプルです。<br>写真はAIで生成したイメージです。</p><small>© 2026 SAMPLE</small><a class="to-top" href="#top" aria-label="ページの先頭へ">↑</a></footer>`;
-const shellBase=(title,body,{base='./',page='home'}={})=>`<!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}｜サンプル</title><meta name="description" content="鉄板を囲む、しあわせな時間。旬の素材を気軽に楽しむ、架空の鉄板焼き店「サンプル」のデモサイトです。"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#132a40"><link rel="icon" href="${base}assets/favicon.svg"><link rel="preload" as="image" href="${base}assets/hero-steak.webp"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/site.js" defer></script>${socialMeta(title,page)}</head>
-<body id="top" data-page="${page}"><a class="skip" href="#main">本文へ進む</a>
-<aside class="scene" aria-label="鉄板料理のイメージ"><img class="scene-image is-current" data-scene="steak" src="${base}assets/hero-steak.webp" alt="香ばしく焼いたステーキと季節野菜"><img class="scene-image" data-scene="seasonal" src="${base}assets/seasonal.webp" alt="帆立と旬野菜の鉄板料理"><img class="scene-image" data-scene="interior" src="${base}assets/interior.webp" alt="木の温もりを感じる鉄板カウンター"><div class="scene-top"><a href="${base}" class="scene-brand">サンプル<span>TEPPAN DINING</span></a><span class="scene-edition">SAVOR THE MOMENT.</span></div><div class="scene-copy"><span class="eyebrow">GOOD FOOD, GOOD COMPANY.</span><p>鉄板を囲む、<br>しあわせな時間。</p><div class="scene-bottom"><span>旬を焼く。会話がはずむ。</span><span class="scroll-hint">SCROLL <i></i></span></div></div><div class="scene-count"><b id="scene-number">01</b> / 03</div></aside>
-<div class="page-column"><header class="header"><a class="header-name" href="${base}">サンプル</a><div class="header-actions"><button class="reserve" data-dialog="reserve">ご予約<span>↗</span></button><button class="menu-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><small>MENU</small></button></div></header>
-<nav id="site-nav" class="site-nav" aria-label="サイトメニュー" inert><span class="eyebrow">TEPPAN DINING SAMPLE</span><div class="nav-links">${navItems.map(([id,label],i)=>`<a href="${base}#${id}"><span>0${i+1}</span>${label}<b>↗</b></a>`).join('')}</div><div class="nav-secondary"><a href="${base}recruit/">採用情報</a><a href="${base}company/">会社概要</a></div><button class="dark-button" data-dialog="reserve">ご予約について <span>↗</span></button></nav>
-<main id="main">${body}</main>${footer(base)}</div>
-<dialog class="dialog" aria-labelledby="dialog-title"><form method="dialog"><button class="dialog-close" aria-label="閉じる">×</button></form><span class="eyebrow">SAMPLE INFORMATION</span><h2 id="dialog-title">ご予約について</h2><div id="dialog-body"></div><form method="dialog"><button class="dark-button">閉じる</button></form></dialog>
-</body></html>`;
-// Wrap visible numerals without touching URLs, attributes, or document metadata.
-const shell=(...args)=>{
- let inBody=false;
- return shellBase(...args).split(/(<[^>]+>)/g).map(part=>{
-  if(part.startsWith('<body'))inBody=true;
-  if(part.startsWith('</body'))inBody=false;
-  if(!inBody||part.startsWith('<'))return part;
-  return part.replace(/\d+(?:[.,:/-]\d+)*/g,value=>' <span class="numeric">'+value+'</span>').replace(/ <span/g,'<span');
- }).join('');
-};
-const heading=(n,en,ja)=>`<div class="section-heading"><span class="eyebrow">${n} / ${en}</span><h2>${ja}</h2></div>`;
-const dishes=[{image:'hero-steak',name:'赤身ステーキと焼き野菜',price:'2,800',desc:'表面は香ばしく、中はしっとり。塩と季節の薬味で、肉の味わいをシンプルに。'},{image:'seasonal',name:'帆立と旬野菜の鉄板焼き',price:'1,600',desc:'甘みのある帆立に、きのこと緑の野菜を添えて。仕上げのバターがふわりと香ります。'}];
-const dishCards=(base='./')=>dishes.map((d,i)=>`<article class="dish"><div class="dish-image"><img src="${base}assets/${d.image}.webp" alt="${d.name}" loading="lazy" width="1536" height="1024"><span>0${i+1}</span></div><div class="dish-title"><h3>${d.name}</h3><p>¥${d.price}<small>税込</small></p></div><p class="body-copy">${d.desc}</p></article>`).join('');
-const menuContent=(base='./')=>`<div class="tabs" role="tablist" aria-label="お品書きの種類"><button role="tab" id="tab-a" aria-selected="true" aria-controls="panel-a" tabindex="0">一品料理<span>À LA CARTE</span></button><button role="tab" id="tab-b" aria-selected="false" aria-controls="panel-b" tabindex="-1">コース<span>COURSE</span></button></div><div role="tabpanel" id="panel-a" aria-labelledby="tab-a">${dishCards(base)}<dl class="menu-list"><div><dt>ふんわり豚玉</dt><dd>¥980</dd></div><div><dt>ガーリックライス</dt><dd>¥780</dd></div><div><dt>季節の焼き野菜</dt><dd>¥900</dd></div><div><dt>本日のデザート</dt><dd>¥650</dd></div></dl><p class="fine">表示価格は税込・サンプル価格です。</p></div><div role="tabpanel" id="panel-b" aria-labelledby="tab-b" hidden><div class="course-photo"><img src="${base}assets/seasonal.webp" alt="旬の食材を楽しむコースのイメージ" loading="lazy"></div><span class="tag">前日までのご予約</span><h3 class="course-title">旬を味わう、おまかせコース</h3><p class="course-price">¥5,500 <small>税込 / お一人様</small></p><p class="body-copy">鉄板を囲む時間を、ゆっくりと。前菜から甘いひと皿まで、季節の味を少しずつお楽しみください。</p><ol class="course-list"><li>季節の前菜</li><li>彩り野菜のサラダ</li><li>帆立と旬野菜の鉄板焼き</li><li>赤身ステーキ</li><li>ガーリックライス</li><li>本日のデザート</li></ol><button class="text-link" data-dialog="reserve">コースのご予約について <span>↗</span></button></div>`;
-const home=`<section class="hero" data-background="steak"><div class="hero-title"><span class="eyebrow">TEPPAN DINING</span><h1>サンプル</h1><p>鉄板と、旬と。</p></div><div class="hero-photo"><img src="./assets/hero-steak.webp" alt="焼き立てのステーキ" width="1536" height="1024" fetchpriority="high"><span class="hero-seal">焼きたてを、<br>すぐそばで。</span></div><div class="hero-caption"><span>おいしい時間を、ご一緒に。</span><a href="#about" aria-label="サンプルについて読む">↓</a></div></section>
-<section id="about" class="section about" data-background="steak"><span class="eyebrow">HELLO, WE ARE SAMPLE.</span><div class="vertical-intro"><h2>音も、香りも。<br>ごちそうのうち。</h2><p>鉄板から届く、食欲を誘う音。<br>立ちのぼる湯気と、香ばしいかおり。<br>目の前で生まれるおいしさを、<br>気取らず、ゆっくりと。</p></div><p class="body-copy">いい素材を、ちょうどいい焼き加減で。<br>何気ない日の晩ごはんも、大切な人との一夜も。<br>サンプルは、あなたの「また来たい」をつくります。</p><div class="about-sign">SAMPLE <span>— since 2026</span></div></section>
-<section id="menu" class="section menu-section" data-background="seasonal">${heading('01','MENU','お品書き')}<p class="body-copy section-lead">好きなものを、好きなだけ。<br>今日は何を焼きましょう。</p>${menuContent()}<a class="outline-button" href="./menu/">お品書きをまとめて見る <span>↗</span></a></section>
-<section id="ingredients" class="section ingredients" data-background="seasonal">${heading('02','INGREDIENTS','おいしさの、もと。')}<p class="body-copy section-lead">手をかけすぎず、素材を引き立てる。<br>私たちが大切にしている、三つのこと。</p><div class="ingredient-list">${[['01','素材に合わせた、火入れ。','肉も、魚介も、野菜も。それぞれの食感と旨みが引き立つ温度を見極め、一皿ずつ丁寧に仕上げます。'],['02','その季節に、おいしいもの。','春のやわらかさ、夏のみずみずしさ、秋の香り、冬の甘み。季節の表情を、鉄板の上で楽しみます。'],['03','最後のひと口まで、心地よく。','味の重なりと食べやすさを大切に。ひと皿を囲む会話が自然にはずむ、そんな料理を目指しています。']].map(([n,t,p])=>`<details><summary><span>${n}</span><h3>${t}</h3><b aria-hidden="true">＋</b></summary><p>${p}</p></details>`).join('')}</div></section>
-<section id="space" class="space" data-background="interior"><img src="./assets/interior.webp" alt="温かい照明と木のカウンターがある店内のイメージ" width="1536" height="1024" loading="lazy"><div class="section">${heading('03','OUR SPACE','ちょうどいい、距離。')}<p class="body-copy">料理を待つ時間も、楽しみのひとつ。<br>カウンター越しに交わす会話と、温かな灯り。<br>おひとりでも、気の合う人とでも。<br>肩の力を抜いてお過ごしください。</p><span class="space-label">COUNTER / TABLE</span></div></section>
-<section id="news" class="section news" data-background="interior">${heading('04','JOURNAL','お知らせ')}<div class="news-list"><button data-dialog="news-open"><time datetime="2026-09-16">2026.09.16</time><span>サンプルのウェブサイトを公開しました。</span><b>↗</b></button><button data-dialog="news-menu"><time datetime="2026-09-16">2026.09.16</time><span>季節を楽しむ、おまかせコース。</span><b>↗</b></button></div></section>
-<section id="access" class="section access" data-background="interior">${heading('05','INFORMATION','お店のこと。')}<dl class="info-list"><div><dt>店名</dt><dd>サンプル</dd></div><div><dt>所在地</dt><dd>北海道札幌市<br><span class="fine">架空の店舗のため住所は未設定です。</span></dd></div><div><dt>営業時間</dt><dd>17:00 — 23:00<br><span class="fine">ラストオーダー 22:00</span></dd></div><div><dt>定休日</dt><dd>水曜日</dd></div><div><dt>お席</dt><dd>カウンター・テーブル席</dd></div><div><dt>ご予約</dt><dd>サンプルのため受付しておりません</dd></div></dl><button class="dark-button" data-dialog="reserve">ご予約・お問い合わせ <span>↗</span></button><p class="fine access-note">店舗情報・メニューはすべてサンプルです。</p></section>`;
-await fs.writeFile(path.join(out,'index.html'),shell('鉄板と、旬と。',home));
-const pages={
- 'company':`${heading('ABOUT US','COMPANY','会社概要')}<p class="body-copy section-lead">おいしい食事と、心地よい時間を。<br>街に小さな楽しみをつくるお店を目指して。</p><dl class="info-list"><div><dt>会社名</dt><dd>株式会社サンプル</dd></div><div><dt>事業内容</dt><dd>飲食店の企画・運営</dd></div><div><dt>運営店舗</dt><dd>サンプル</dd></div><div><dt>所在地</dt><dd>北海道札幌市（サンプル）</dd></div></dl><p class="fine">このページの企業・店舗情報は架空のものです。</p>`,
- 'recruit':`${heading('JOIN US','RECRUIT','おいしい時間を、<br>一緒につくる。')}<img class="subpage-photo" src="../assets/interior.webp" alt="鉄板カウンターのイメージ"><p class="body-copy section-lead">料理が好き。人と話すのが好き。<br>その気持ちを大切に、ひとつずつ。<br>気持ちのいいお店を一緒につくりませんか。</p><h2 class="small-heading">募集要項</h2><dl class="info-list"><div><dt>職種</dt><dd>キッチン・ホールスタッフ</dd></div><div><dt>業務内容</dt><dd>調理補助、接客、店舗運営</dd></div><div><dt>勤務条件</dt><dd>実際の募集時にご案内します</dd></div><div><dt>応募受付</dt><dd>現在は募集しておりません</dd></div></dl><button class="dark-button" data-dialog="recruit">採用について <span>↗</span></button><p class="fine">サンプルの採用ページです。応募情報の送信は行いません。</p>`,
- 'menu':`${heading('À LA CARTE / COURSE','MENU','お品書き')}<p class="body-copy section-lead">焼きたての一皿を、気軽に。<br>料理とコースをご紹介します。</p>${menuContent('../')}`
-};
-for(const [name,content] of Object.entries(pages)){await fs.mkdir(path.join(out,name),{recursive:true});await fs.writeFile(path.join(out,name,'index.html'),shell(name==='company'?'会社概要':name==='recruit'?'採用情報':'お品書き',`<section class="section subpage" data-background="${name==='menu'?'seasonal':'interior'}"><a class="back-link" href="../">← トップへ</a>${content.replace(/<h2>([\s\S]*?)<\/h2>/, '<h1>$1</h1>')}</section>`,{base:'../',page:name}));}
-await fs.writeFile(path.join(out,'.nojekyll'),'');
-console.log('Built 4 original static pages into public/.');
+const opening = `<p class="open-date">2026.10 <span>GRAND OPEN</span></p><p class="open-note">この一杯が、また誰かの伝説になる。</p>`;
+const catchphrase = `<span class="catch-first">本格家系を、</span><span class="catch-second"><em class="brush-word"><img src="./assets/ude.png" alt="腕" width="106" height="99"></em>と<em class="brush-word"><img src="./assets/hi.png" alt="火" width="119" height="113"></em>で食わせる。</span>`;
+const car = `<svg viewBox="0 0 48 40" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m8 16 5-11h22l5 11M6 18h36v15H6zM10 33v4m28-4v4M3 16h5m32 0h5M13 23h3m16 0h3M15 29h18"/></svg>`;
+const home = `<section class="hero" aria-labelledby="hero-name"><picture class="hero-picture"><source media="(max-width: 700px)" srcset="./assets/hero-mobile.webp"><img src="./assets/hero.webp" alt="湯気の立つ濃厚豚骨醤油らーめん。海苔、ほうれん草、チャーシューと、箸で持ち上げた中太麺" width="1671" height="941" fetchpriority="high"></picture><div class="hero-shade"></div><p class="hero-motto">一杯に、魂を込めて。</p><div class="hero-content"><p class="hero-category">横浜家系らーめん</p><h1 id="hero-name"><picture><source media="(max-width: 700px)" srcset="./assets/logo-vertical.png"><img src="./assets/logo.png" alt="腕火屋" width="610" height="208"></picture><span class="hero-seal" aria-hidden="true">横浜<br>家系</span></h1><p class="hero-catch">${catchphrase}</p><p class="hero-description">濃厚豚骨醤油 <span>／</span> 麺・スープ・具材に妥協なし <span>／</span> 駐車場完備</p></div><div class="hero-opening">${opening}</div><a class="hero-scroll" href="#about"><span>SCROLL</span><i aria-hidden="true"></i></a><a class="parking" href="#access">${car}<span>駐車場<br>完備</span></a></section>
+<section class="concept photo-section" id="about" aria-labelledby="concept-title">${photo("chef", "厨房でスープと向き合う職人の後ろ姿")}<div class="concept-mark" aria-hidden="true"><span class="enso"></span><img src="./assets/ude.png" alt="" width="106" height="99"><span>と</span><img src="./assets/hi.png" alt="" width="119" height="113"></div><div class="concept-copy"><p class="eyebrow">OUR SPIRIT</p><h2 id="concept-title">腕と火がつくる、<br>本物の一杯。</h2><p>ただのラーメンではない。<br>炊き続ける、研ぎ澄ます、仕込み続ける。<br>その積み重ねが、腕火屋の一杯になる。<br>家系の誇りを、ここから。</p></div></section>
+<section class="craft photo-section soup" aria-labelledby="soup-title">${photo("soup", "寸胴からすくった濃厚な豚骨醤油スープ")}<div class="craft-copy"><h2 id="soup-title">一、炊く。</h2><h3>濃厚豚骨醤油スープ</h3><p>じっくりと炊き上げた豚骨から<br>生まれる、濃厚でまろやかな旨味。<br>継ぎ足しではなく、その日の一杯のために<br>丁寧に炊き上げる。</p></div></section>
+<section class="craft photo-section noodles" aria-labelledby="noodle-title"><div class="noodle-photo">${photo("hero", "濃厚なスープをまとった力強い中太麺")}</div><div class="craft-copy"><h2 id="noodle-title">二、絡む。</h2><h3>力強い中太麺</h3><p>濃厚なスープをしっかり受け止める、<br>もっちりとした中太麺。<br>一口ごとに広がる、小麦の香りと<br>力強い食感。</p></div></section>
+<section class="craft photo-section pork" aria-labelledby="pork-title">${photo("pork", "丁寧に切り分けた厚切りチャーシュー")}<div class="craft-copy"><h2 id="pork-title">三、仕込む。</h2><h3>妥協しない具材</h3><p>旨さを支えるのは、麺とスープだけじゃない。<br>チャーシュー、海苔、ほうれん草。<br>すべての具材に、妥協はない。</p></div></section>
+<section class="menu-section" id="menu" aria-labelledby="menu-title"><div class="menu-intro"><p class="eyebrow">OUR RAMEN</p><h2 id="menu-title" class="brush-heading">メニュー</h2><p>一杯に、すべてを込めて。</p><a class="button button-outline" href="./menu/">メニュー一覧を見る <span aria-hidden="true">→</span></a></div><figure class="signature">${photo("bowl", "味玉、チャーシュー、海苔をのせた特製 腕火らーめん", "./", "bowl-photo")}<figcaption>特製 腕火らーめん <span>1,180円</span></figcaption></figure><div class="menu-prices">${prices(dishes)}${prices(extras)}<p class="fine">表示価格は税込・サンプル価格です。</p></div></section>
+<section class="space photo-section" id="space" aria-labelledby="space-title">${photo("room", "木のカウンターと暖かな灯りが迎える店内のイメージ")}<div class="space-copy"><h2 id="space-title" class="brush-heading">店内</h2><h3>ラーメンと、<br>向き合える場所。</h3><p>木の温もりと、熱気。<br>一杯に集中できる、<br>シンプルで心地よい空間です。</p></div></section>
+<section class="access photo-section" id="access" aria-labelledby="access-title">${photo("exterior", "駐車場を備えた郊外の腕火屋の外観イメージ")}<div class="access-copy"><h2 id="access-title" class="brush-heading">店舗情報</h2><p>駐車場完備。<br>お車でも安心して<br>お越しいただけます。</p><button class="button button-outline" data-dialog="access">店舗情報を見る <span aria-hidden="true">→</span></button></div><div class="access-opening"><span class="enso" aria-hidden="true"></span>${opening}<p class="fine">2026年10月オープン予定（仮設定）</p></div></section>
+<section class="news" id="news" aria-labelledby="news-title"><h2 id="news-title">お知らせ</h2><button data-dialog="opening"><time datetime="2026-10">2026.10</time><span>腕火屋、グランドオープン。<small>デモサイトの開業案内です。</small></span><b aria-hidden="true">→</b></button></section>`;
+const menu = `<div class="subpage-heading"><p class="eyebrow">THE MENU</p><h1>メニュー</h1><p>一杯に、すべてを込めて。</p></div><div class="menu-detail"><figure class="signature">${photo("bowl", "特製 腕火らーめんのイメージ", "../", "bowl-photo")}<figcaption>特製 腕火らーめん <span>1,180円</span></figcaption></figure><div><h2>らーめん</h2>${prices(dishes)}<p>豚骨の旨味、醤油のキレ、もっちりとした中太麺。<br>腕火屋の一杯を、お好みで。</p><h2>ご飯・トッピング</h2>${prices(extras)}<p class="fine">すべて税込・架空のサンプル価格です。</p></div></div><section class="preferences"><h2>お好みの一杯に。</h2><p>麺の硬さ、味の濃さ、油の量。お好みを選んでみてください。</p><form id="preference-form">${[
+  ["麺の硬さ", "noodle", ["硬め", "普通", "柔らかめ"]],
+  ["味の濃さ", "flavor", ["濃いめ", "普通", "薄め"]],
+  ["油の量", "oil", ["多め", "普通", "少なめ"]],
+]
+  .map(
+    ([label, name, opts]) =>
+      `<fieldset><legend>${label}</legend>${opts.map((o) => `<label><input type="radio" name="${name}" value="${o}" ${o === "普通" ? "checked" : ""}><span>${o}</span></label>`).join("")}</fieldset>`,
+  )
+  .join(
+    "",
+  )}<p id="preference-summary" role="status" aria-live="polite">麺：普通 ／ 味：普通 ／ 油：普通</p><p class="fine">お好みを試すデモです。注文・送信は行いません。</p></form></section>`;
+const recruit = `<div class="subpage-heading"><p class="eyebrow">JOIN OUR KITCHEN</p><h1>その腕で、<br>誰かの一杯を。</h1><p>料理が好き。ラーメンが好き。<br>その想いを、一杯に込めて。</p></div>${photo("chef", "一杯に向き合う職人のイメージ", "../", "subpage-photo")}<section class="subpage-info"><h2>採用情報</h2><dl class="info-list"><div><dt>職種</dt><dd>キッチン・ホールスタッフ</dd></div><div><dt>業務内容</dt><dd>調理補助・接客・店舗運営</dd></div><div><dt>勤務条件</dt><dd>実際の募集時にご案内します</dd></div><div><dt>応募受付</dt><dd>現在は募集しておりません</dd></div></dl><button class="button button-red" data-dialog="recruit">採用について <span aria-hidden="true">→</span></button><p class="fine">架空店舗の採用ページです。応募情報の送信は行いません。</p></section>`;
+const company = `<div class="subpage-heading"><p class="eyebrow">ABOUT THIS WEBSITE</p><h1>サイトについて</h1><p>横浜家系らーめん「腕火屋」</p></div><section class="subpage-info"><h2>デモサイトのご案内</h2><p>このサイトは、架空の本格家系ラーメン店「腕火屋」を題材にしたデモサイトです。</p><dl class="info-list"><div><dt>店名</dt><dd>腕火屋（うでびや / UDEBIYA）</dd></div><div><dt>開業時期</dt><dd>2026年10月（仮設定）</dd></div><div><dt>所在地・電話番号</dt><dd>未設定</dd></div><div><dt>営業時間・定休日</dt><dd>未設定</dd></div><div><dt>運営会社</dt><dd>架空店舗のため未設定</dd></div><div><dt>写真</dt><dd>AI生成のイメージ</dd></div></dl><p>掲載メニュー・価格・駐車場等は仮設定です。予約、お問い合わせ、注文、採用応募は受け付けておりません。個人情報の入力・送信機能はありません。</p></section>`;
+await fs.mkdir(out, { recursive: true });
+await fs.writeFile(
+  path.join(out, "index.html"),
+  shell("本格家系を、腕と火で食わせる。", home),
+);
+for (const [page, title, content] of [
+  ["menu", "メニュー", menu],
+  ["recruit", "採用情報", recruit],
+  ["company", "サイトについて", company],
+]) {
+  await fs.mkdir(path.join(out, page), { recursive: true });
+  await fs.writeFile(
+    path.join(out, page, "index.html"),
+    shell(
+      title,
+      `<div class="subpage"><a class="back-link" href="../">← トップへ</a>${content}</div>`,
+      page,
+    ),
+  );
+}
+await fs.writeFile(path.join(out, ".nojekyll"), "");
+console.log("Built 4 UDEBIYA static pages.");
