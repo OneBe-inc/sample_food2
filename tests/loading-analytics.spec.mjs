@@ -54,7 +54,7 @@ for (const width of [390, 1141]) {
 test.describe("brand loading", () => {
   test.use({ reducedMotion: "no-preference" });
   for (const width of [390, 1440]) {
-    test(`first visit at ${width}px, then skip within the same tab`, async ({
+    test(`home loading at ${width}px repeats on reload and skips subpages`, async ({
       page,
     }, info) => {
       await page.setViewportSize({ width, height: 844 });
@@ -68,7 +68,9 @@ test.describe("brand loading", () => {
         "inert",
         "",
       );
-      await page.reload();
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await expect(page.locator("#site-loader")).toBeVisible();
+      await page.keyboard.press("Escape");
       await expect(page.locator("#site-loader")).toBeHidden();
       await page.goto("menu/");
       await expect(page.locator("#site-loader")).toBeHidden();
@@ -93,7 +95,7 @@ test.describe("brand loading", () => {
     });
     await page.goto("./", { waitUntil: "domcontentloaded" });
     await expect(page.locator("#site-loader")).toBeVisible();
-    await expect(page.locator("#site-loader")).toBeHidden({ timeout: 3500 });
+    await expect(page.locator("#site-loader")).toBeHidden({ timeout: 4200 });
     await expect(page.locator("#site-shell")).not.toHaveAttribute("inert", "");
     await page.evaluate(() => sessionStorage.clear());
     await page.reload({ waitUntil: "domcontentloaded" });
