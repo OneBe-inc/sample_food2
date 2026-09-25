@@ -1,6 +1,55 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
+
+test("every page loads content-versioned CSS and scripts", async ({ page }) => {
+  for (const route of ["./", "menu/", "recruit/", "company/"]) {
+    await page.goto(route);
+    const urls = await page
+      .locator('link[rel="stylesheet"],script[src]')
+      .evaluateAll((nodes) => nodes.map((node) => node.href || node.src));
+    expect(urls).toHaveLength(4);
+    for (const value of urls) {
+      const url = new URL(value);
+      const name = path.basename(url.pathname);
+      const source = (
+        await fs.readFile(path.resolve("public/assets", name), "utf8")
+      ).replace(/\r\n/g, "\n");
+      expect(url.searchParams.get("v")).toBe(
+        createHash("sha256").update(source).digest("hex").slice(0, 12),
+      );
+    }
+  }
+});
+
+for (const width of [390, 1141]) {
+  test(`cached pre-loader CSS cannot shift the page at ${width}px`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width, height: 912 });
+    const css = (
+      await fs.readFile(path.resolve("public/assets/site.css"), "utf8")
+    ).split("/* Brand introduction:")[0];
+    await page.route("**/assets/site.css*", (route) =>
+      route.fulfill({ contentType: "text/css", body: css }),
+    );
+    await page.goto("./", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("#site-loader")).toBeHidden();
+    await expect(page.locator("#site-shell")).not.toHaveAttribute("inert", "");
+    expect(
+      await page
+        .locator(".hero")
+        .evaluate((el) => el.getBoundingClientRect().top),
+    ).toBe(0);
+    expect(
+      await page
+        .locator("#site-loader")
+        .evaluate((el) => el.getBoundingClientRect().height),
+    ).toBe(0);
+  });
+}
 
 test.describe("brand loading", () => {
   test.use({ reducedMotion: "no-preference" });
