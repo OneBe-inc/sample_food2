@@ -40,7 +40,8 @@ for (const file of [
     const url = m[1];
     if (/^https?:/.test(url))
       throw Error("Unexpected external request: " + url);
-    const [relative, hash] = url.split("#");
+    const [reference, hash] = url.split("#");
+    const relative = reference.split("?")[0];
     let target = relative
       ? path.resolve(path.dirname(path.join(root, file)), relative)
       : path.join(root, file);

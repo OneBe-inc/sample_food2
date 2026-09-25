@@ -37,10 +37,10 @@
     } catch {
       /* The page remains usable without storage. */
     }
-    setTimeout(
-      () => root.classList.remove("is-loading", "is-loading-leaving"),
-      360,
-    );
+    setTimeout(() => {
+      root.classList.remove("is-loading", "is-loading-leaving");
+      if (loader) loader.hidden = true;
+    }, 360);
   }
   // Start the escape timer before touching the DOM; a stalled image must not block the site.
   deadline = setTimeout(finish, 2800);
@@ -48,12 +48,17 @@
     "DOMContentLoaded",
     () => {
       if (finished) return;
+      const loader = document.querySelector("#site-loader");
+      // Never reveal an unstyled overlay (for example after a cached or failed CSS response).
+      if (!loader || getComputedStyle(loader).position !== "fixed") {
+        finish();
+        return;
+      }
       const shell = document.querySelector("#site-shell");
       shell.inert = true;
       shell.setAttribute("aria-busy", "true");
-      document
-        .querySelector("#site-loader")
-        .setAttribute("aria-hidden", "false");
+      loader.hidden = false;
+      loader.setAttribute("aria-hidden", "false");
       document.querySelector(".loader-skip").addEventListener("click", finish);
       const pictures = [
         ...document.querySelectorAll(".loader-logo img, .hero-picture img"),

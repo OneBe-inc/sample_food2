@@ -1,6 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
 const out = path.join(import.meta.dirname, "public");
+const assetVersions = new Map();
+for (const name of ["site.css", "site.js", "loader.js", "analytics.js"]) {
+  const source = (
+    await fs.readFile(path.join(out, "assets", name), "utf8")
+  ).replace(/\r\n/g, "\n");
+  assetVersions.set(
+    name,
+    createHash("sha256").update(source).digest("hex").slice(0, 12),
+  );
+}
 const site = "https://onebe-inc.github.io/sample_food2/";
 const analyticsConfig = JSON.parse(
   await fs.readFile(
@@ -43,10 +54,11 @@ const photo = (name, alt, base = "./", cls = "section-photo") =>
   `<img class="${cls}" src="${base}assets/${name}.webp" srcset="${base}assets/${name}-800.webp 800w, ${base}assets/${name}.webp ${name === "bowl" ? 900 : 1672}w" sizes="(max-width: 700px) 100vw, 100vw" alt="${alt}" width="${name === "bowl" ? 900 : 1672}" height="${name === "bowl" ? 900 : 941}" loading="lazy" decoding="async">`;
 const shell = (title, body, page = "home") => {
   const base = page === "home" ? "./" : "../";
+  const asset = (name) => `${base}assets/${name}?v=${assetVersions.get(name)}`;
   return `<!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}｜横浜家系らーめん 腕火屋</title><meta name="description" content="${description}"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#090908"><link rel="icon" href="${base}assets/favicon.svg"><link rel="stylesheet" href="${base}assets/site.css"><script src="${base}assets/loader.js"></script><script src="${base}assets/site.js" defer></script><meta name="ga4-measurement-id" content="${measurementId}"><script src="${base}assets/analytics.js" defer></script>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}｜横浜家系らーめん 腕火屋</title><meta name="description" content="${description}"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#090908"><link rel="icon" href="${base}assets/favicon.svg"><link rel="stylesheet" href="${asset("site.css")}"><script src="${asset("loader.js")}"></script><script src="${asset("site.js")}" defer></script><meta name="ga4-measurement-id" content="${measurementId}"><script src="${asset("analytics.js")}" defer></script>
 <meta property="og:type" content="website"><meta property="og:locale" content="ja_JP"><meta property="og:site_name" content="腕火屋"><meta property="og:title" content="${title}｜腕火屋"><meta property="og:description" content="${description}"><meta property="og:url" content="${site}${page === "home" ? "" : page + "/"}"><meta property="og:image" content="${site}assets/ogp.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="濃厚豚骨醤油の家系らーめんのイメージ"><meta name="twitter:card" content="summary_large_image"></head>
-<body id="top" data-page="${page}"><div class="site-loader" id="site-loader" role="status" aria-label="腕火屋 読み込み中" aria-hidden="true"><div class="loader-stage"><svg class="loader-ring" viewBox="0 0 320 320" aria-hidden="true"><circle cx="160" cy="160" r="129"/><circle class="loader-ring-echo" cx="160" cy="160" r="135"/></svg><div class="loader-logo">${logo(base)}</div><p class="loader-caption">一杯に、魂を込めて。</p><p class="loader-label">UDEBIYA</p></div><button type="button" class="loader-skip" aria-label="ローディングをスキップ">SKIP →</button></div><div id="site-shell"><a class="skip" href="#main">本文へ進む</a><header class="header"><a class="brand" href="${base}" aria-label="腕火屋 トップ">${logo(base)}</a><nav class="desktop-nav" aria-label="メインナビゲーション">${links(base)}</nav><div class="header-actions">${contact}<button class="menu-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button></div></header>
+<body id="top" data-page="${page}"><div class="site-loader" id="site-loader" hidden role="status" aria-label="腕火屋 読み込み中" aria-hidden="true"><div class="loader-stage"><svg class="loader-ring" viewBox="0 0 320 320" aria-hidden="true"><circle cx="160" cy="160" r="129"/><circle class="loader-ring-echo" cx="160" cy="160" r="135"/></svg><div class="loader-logo">${logo(base)}</div><p class="loader-caption">一杯に、魂を込めて。</p><p class="loader-label">UDEBIYA</p></div><button type="button" class="loader-skip" aria-label="ローディングをスキップ">SKIP →</button></div><div id="site-shell"><a class="skip" href="#main">本文へ進む</a><header class="header"><a class="brand" href="${base}" aria-label="腕火屋 トップ">${logo(base)}</a><nav class="desktop-nav" aria-label="メインナビゲーション">${links(base)}</nav><div class="header-actions">${contact}<button class="menu-toggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button></div></header>
 <dialog class="mobile-nav" id="mobile-nav" aria-labelledby="nav-title"><div class="nav-top"><p id="nav-title">腕火屋 <small>UDEBIYA</small></p><button class="nav-close" aria-label="メニューを閉じる">×</button></div><nav aria-label="モバイルナビゲーション">${links(base)}</nav><p class="nav-bottom">一杯に、魂を込めて。</p></dialog>
 <main id="main">${body}</main><footer class="footer"><div class="footer-main"><a class="brand" href="${base}" aria-label="腕火屋 トップ">${logo(base)}</a><nav aria-label="フッターナビゲーション">${links(base)}</nav>${contact}</div><div class="footer-note"><p>このサイトは架空の店舗のデモサイトです。店舗・価格・開業日は仮設定で、写真はAI生成のイメージです。</p><a href="${base}company/">サイトについて</a><small>© 2026 UDEBIYA</small><a href="#top" aria-label="ページの先頭へ">↑</a></div></footer>
 <dialog class="info-dialog" aria-labelledby="dialog-title"><form method="dialog"><button class="dialog-close" aria-label="閉じる">×</button></form><p class="eyebrow">UDEBIYA / DEMO INFORMATION</p><h2 id="dialog-title"></h2><div id="dialog-body"></div><form method="dialog"><button class="button button-red">閉じる <span aria-hidden="true">→</span></button></form></dialog></div></body></html>`;
