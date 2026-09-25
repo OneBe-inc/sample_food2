@@ -103,3 +103,41 @@ preferences?.addEventListener("change", () => {
     `麺：${values.get("noodle")} ／ 味：${values.get("flavor")} ／ 油：${values.get("oil")}`;
 });
 preferences?.addEventListener("submit", (event) => event.preventDefault());
+
+// Keep decorative steam idle when the hero is off screen or the tab is hidden.
+const hero = document.querySelector(".hero");
+const steamToggle = document.querySelector(".steam-toggle");
+const steam = document.querySelector(".hero-steam");
+if (
+  hero &&
+  steamToggle &&
+  steam &&
+  getComputedStyle(steam).position === "absolute"
+) {
+  steam.hidden = false;
+  let visible = false;
+  let enabled = true;
+  const syncSteam = () =>
+    hero.classList.toggle(
+      "is-steam-active",
+      visible && enabled && !document.hidden,
+    );
+  const observer = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    syncSteam();
+  });
+  observer.observe(hero);
+  document.addEventListener("visibilitychange", syncSteam);
+  steamToggle.hidden = false;
+  steamToggle.addEventListener("click", () => {
+    enabled = !enabled;
+    hero.classList.toggle("is-steam-disabled", !enabled);
+    steamToggle.setAttribute("aria-pressed", String(enabled));
+    steamToggle.setAttribute(
+      "aria-label",
+      enabled ? "湯気の動きを止める" : "湯気の動きを再生する",
+    );
+    steamToggle.textContent = enabled ? "湯気 ON" : "湯気 OFF";
+    syncSteam();
+  });
+}

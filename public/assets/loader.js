@@ -1,16 +1,15 @@
 (() => {
   const root = document.documentElement;
-  const key = "udebiya-intro-v1";
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const returning =
     performance.getEntriesByType("navigation")[0]?.type === "back_forward";
-  let seen = false;
-  try {
-    seen = sessionStorage.getItem(key) === "seen";
-  } catch {
-    /* Storage may be disabled. */
-  }
-  if (seen || returning || reducedMotion || location.hash) return;
+  if (
+    root.dataset.page !== "home" ||
+    returning ||
+    reducedMotion ||
+    location.hash
+  )
+    return;
 
   root.classList.add("is-loading");
   let finished = false;
@@ -32,18 +31,13 @@
       main?.focus({ preventScroll: true });
     }
     loader?.setAttribute("aria-hidden", "true");
-    try {
-      sessionStorage.setItem(key, "seen");
-    } catch {
-      /* The page remains usable without storage. */
-    }
     setTimeout(() => {
       root.classList.remove("is-loading", "is-loading-leaving");
       if (loader) loader.hidden = true;
     }, 360);
   }
   // Start the escape timer before touching the DOM; a stalled image must not block the site.
-  deadline = setTimeout(finish, 2800);
+  deadline = setTimeout(finish, 3200);
   document.addEventListener(
     "DOMContentLoaded",
     () => {
@@ -68,7 +62,7 @@
       );
       Promise.all([
         assetsReady,
-        new Promise((resolve) => setTimeout(resolve, 1250)),
+        new Promise((resolve) => setTimeout(resolve, 1800)),
       ]).then(finish);
     },
     { once: true },
